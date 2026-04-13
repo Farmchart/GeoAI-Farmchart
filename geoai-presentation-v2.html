@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoAI - Farmchart</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/black.min.css" id="theme">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --c-bg: #0a0a0f;
+    --c-surface: #12121a;
+    --c-accent: #00e5a0;
+    --c-accent2: #6c5ce7;
+    --c-text: #e8e8f0;
+    --c-dim: #6a6a80;
+    --c-glow: rgba(0, 229, 160, 0.15);
+    --font-display: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+
+  .reveal {
+    font-family: var(--font-mono);
+    color: var(--c-text);
+  }
+
+  .reveal .slides {
+    text-align: left;
+  }
+
+  .reveal h1, .reveal h2, .reveal h3 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--c-text);
+  }
+
+  .reveal h1 {
+    font-size: 2.2em;
+    line-height: 1.05;
+  }
+
+  .reveal h2 {
+    font-size: 1.8em;
+    margin-bottom: 0.2em;
+  }
+
+  .reveal h3 {
+    font-size: 1.2em;
+    color: var(--c-accent);
+    font-weight: 600;
+  }
+
+  .reveal p, .reveal li {
+    font-size: 0.55em;
+    line-height: 1.7;
+    color: var(--c-dim);
+  }
+
+  .reveal .slides section {
+    padding: 30px 40px;
+    box-sizing: border-box;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── BACKGROUND GRAIN ── */
+  .reveal .slide-background::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── ACCENT LINE ── */
+  .accent-line {
+    width: 80px;
+    height: 3px;
+    background: var(--c-accent);
+    margin: 10px 0;
+    border-radius: 2px;
+    box-shadow: 0 0 20px var(--c-glow);
+    flex-shrink: 0;
+  }
+
+  /* ── TAG / LABEL ── */
+  .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.4em;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--c-accent);
+    border: 1px solid rgba(0, 229, 160, 0.3);
+    padding: 4px 14px;
+    border-radius: 3px;
+    margin-bottom: 16px;
+    background: rgba(0, 229, 160, 0.05);
+  }
+
+  /* ── TITLE SLIDE ── */
+  .title-slide {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    height: 100%;
+  }
+
+  .title-slide .event-badge {
+    font-family: var(--font-mono);
+    font-size: 0.4em;
+    color: var(--c-accent);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    opacity: 0.8;
+  }
+
+  .title-slide h1 .highlight {
+    color: var(--c-accent);
+    position: relative;
+  }
+
+  .title-slide .subtitle {
+    font-size: 0.6em;
+    color: var(--c-dim);
+    max-width: 600px;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  .title-slide .team {
+    font-size: 0.45em;
+    color: var(--c-dim);
+    margin-top: 40px;
+    letter-spacing: 0.08em;
+  }
+
+  .title-slide .team span {
+    color: var(--c-text);
+  }
+
+  /* ── PIPELINE OVERVIEW ── */
+  .pipeline-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: nowrap;
+    width: 100%;
+    margin: 20px 0;
+    flex: 1;
+  }
+
+  .pipeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .pipeline-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    background: var(--c-surface);
+    border: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6em;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .pipeline-icon::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--c-accent), var(--c-accent2));
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.3s;
+  }
+
+  .pipeline-step:hover .pipeline-icon::after {
+    opacity: 0.6;
+  }
+
+  .pipeline-label {
+    font-family: var(--font-mono);
+    font-size: 0.35em;
+    color: var(--c-dim);
+    text-align: center;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .pipeline-arrow {
+    font-size: 0.6em;
+    color: var(--c-accent);
+    opacity: 0.4;
+    flex-shrink: 0;
+    margin: 0 4px;
+    padding-bottom: 28px;
+  }
+
+  /* ── DETAIL SLIDE LAYOUT ── */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    align-items: center;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+  }
+
+  .detail-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .detail-content ul li {
+    position: relative;
+    padding-left: 20px;
+    margin-bottom: 6px;
+  }
+
+  .detail-content ul li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--c-accent);
+  }
+
+  /* ── MEDIA PLACEHOLDER ── */
+  .media-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    background: var(--c-surface);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--c-dim);
+    font-size: 0.45em;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .media-placeholder::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,160,0.03), rgba(108,92,231,0.03));
+  }
+
+  .media-placeholder .icon {
+    font-size: 2.4em;
+    opacity: 0.3;
+  }
+
+  .media-placeholder .label {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    opacity: 0.5;
+  }
+
+  .media-placeholder .hint {
+    font-size: 0.7em;
+    opacity: 0.3;
+    max-width: 200px;
+    text-align: center;
+  }
+
+  /* ── TECH STACK CHIPS ── */
+  .tech-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 0.38em;
+    padding: 4px 12px;
+    border-radius: 4px;
+    background: rgba(108, 92, 231, 0.1);
+    border: 1px solid rgba(108, 92, 231, 0.2);
+    color: #a29bfe;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── RESULTS / METRICS ── */
+  .metrics-row {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+  }
+
+  .metric {
+    text-align: center;
+  }
+
+  .metric .value {
+    font-family: var(--font-display);
+    font-size: 1.8em;
+    font-weight: 800;
+    color: var(--c-accent);
+    line-height: 1;
+  }
+
+  .metric .label {
+    font-family: var(--font-mono);
+    font-size: 0.35em;
+    color: var(--c-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 6px;
+  }
+
+  /* ── CUSTOM FRAGMENTS ── */
+  .reveal .fragment.fade-up {
+    transform: translateY(30px);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .reveal .fragment.fade-up.visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* ── AUTOPLAY BUTTON ── */
+  .autoplay-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 120px;
+    z-index: 200;
+    font-family: var(--font-mono);
+    font-size: 0.32em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-dim);
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.5;
+  }
+
+  .autoplay-btn:hover {
+    opacity: 1;
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+  }
+
+  .autoplay-btn.active {
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+    opacity: 1;
+    box-shadow: 0 0 10px var(--c-glow);
+  }
+
+  /* ── FULLSCREEN BUTTON ── */
+  .fullscreen-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 220px;
+    z-index: 200;
+    font-family: var(--font-mono);
+    font-size: 0.32em;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-dim);
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 5px 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.5;
+  }
+
+  .fullscreen-btn:hover {
+    opacity: 1;
+    border-color: var(--c-accent);
+    color: var(--c-accent);
+  }
+
+  /* ── FOOTER ── */
+  .slide-footer {
+    position: fixed;
+    bottom: 20px;
+    left: 40px;
+    font-family: var(--font-mono);
+    font-size: 0.35em;
+    color: var(--c-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    opacity: 0.4;
+    z-index: 100;
+  }
+
+  /* ── OVERVIEW MODE TWEAKS ── */
+  .reveal.overview .slides section {
+    border: 1px solid rgba(0,229,160,0.15) !important;
+    border-radius: 8px;
+  }
+
+  /* ── SCROLL INDICATOR ── */
+  .scroll-hint {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .scroll-hint span {
+    font-family: var(--font-mono);
+    font-size: 0.3em;
+    color: var(--c-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .scroll-hint .arrow {
+    font-size: 0.6em;
+    color: var(--c-accent);
+    opacity: 0.6;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.6; transform: translateX(-50%) translateY(0); }
+    50% { opacity: 1; transform: translateX(-50%) translateY(5px); }
+  }
+
+  /* ── FULL-WIDTH MEDIA ── */
+  .full-media {
+    grid-column: 1 / -1;
+  }
+
+  .two-media {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .two-media .media-placeholder {
+    aspect-ratio: 4/3;
+  }
+</style>
+</head>
+<body>
+
+<div class="reveal">
+  <div class="slides">
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 1 — TITLE                             -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="title-slide" data-background-color="#0a0a0f">
+      <div class="event-badge">Geo AI 2026</div>
+      <h1>Farm<span class="highlight">chart</span></h1>
+      <div class="accent-line"></div>
+      <div style="display:flex;align-items:center;gap:24px;margin-top:12px;">
+        <p class="subtitle" style="margin:0;">
+          From field capture to interactive digital twin - a photogrammetry
+          &amp; Gaussian Splatting pipeline for precision agriculture.
+        </p>
+      </div>
+      <p class="team">
+        <span>Ørjan Stueland · Robin Finsådal · Noah Øfsti · Benjamin Papp</span>
+      </p>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 2 — PIPELINE OVERVIEW                 -->
+    <!-- ════════════════════════════════════════════ -->
+    <section data-background-color="#0a0a0f">
+      <div class="tag">The full picture</div>
+      <h2>Pipeline</h2>
+      <div class="accent-line"></div>
+
+      <div class="pipeline-container" style="margin-top:35px;margin-bottom:35px;transform:scale(1.05);transform-origin:center top;">
+        <div class="pipeline-step">
+          <div class="pipeline-icon">
+            <!-- Camera -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+          </div>
+          <div class="pipeline-label">Capture</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">
+          <div class="pipeline-icon">
+            <!-- Point cloud / SfM -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="0.75" stroke-linecap="round">
+              <circle cx="12" cy="3.5" r="1.8" fill="var(--c-accent)" stroke="none"/>
+              <circle cx="4"  cy="16"  r="1.8" fill="var(--c-accent)" stroke="none"/>
+              <circle cx="20" cy="16"  r="1.8" fill="var(--c-accent)" stroke="none"/>
+              <circle cx="8"  cy="10"  r="1.4" fill="var(--c-accent)" stroke="none" opacity="0.7"/>
+              <circle cx="16" cy="10"  r="1.4" fill="var(--c-accent)" stroke="none" opacity="0.7"/>
+              <circle cx="12" cy="19"  r="1.4" fill="var(--c-accent)" stroke="none" opacity="0.7"/>
+              <line x1="12" y1="3.5" x2="8"  y2="10"  opacity="0.4"/>
+              <line x1="12" y1="3.5" x2="16" y2="10"  opacity="0.4"/>
+              <line x1="8"  y1="10"  x2="4"  y2="16"  opacity="0.4"/>
+              <line x1="16" y1="10"  x2="20" y2="16"  opacity="0.4"/>
+              <line x1="8"  y1="10"  x2="12" y2="19"  opacity="0.4"/>
+              <line x1="16" y1="10"  x2="12" y2="19"  opacity="0.4"/>
+              <line x1="4"  y1="16"  x2="12" y2="19"  opacity="0.4"/>
+              <line x1="20" y1="16"  x2="12" y2="19"  opacity="0.4"/>
+            </svg>
+          </div>
+          <div class="pipeline-label">Reconstruct</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">
+          <div class="pipeline-icon">
+            <!-- Isometric 3D cube -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <!-- Top face -->
+              <path d="M12 2L22 7L12 12L2 7L12 2Z" fill="rgba(0,229,160,0.1)"/>
+              <!-- Right face -->
+              <path d="M22 7L22 17L12 22L12 12Z" fill="rgba(0,229,160,0.1)"/>
+              <!-- Left face -->
+              <path d="M2 7L2 17L12 22L12 12Z" fill="rgba(0,229,160,0.1)"/>
+            </svg>
+          </div>
+          <div class="pipeline-label">3DGS</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">
+          <div class="pipeline-icon">
+            <!-- Layers / segmentation -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 12l10 5 10-5"/>
+              <path d="M2 17l10 5 10-5"/>
+            </svg>
+          </div>
+          <div class="pipeline-label">Segmentation</div>
+        </div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">
+          <div class="pipeline-icon">
+            <!-- Monitor / game engine -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/>
+              <path d="M8 21h8M12 17v4"/>
+              <polygon points="10,8 10,14 15,11" fill="var(--c-accent)" stroke="none" opacity="0.7"/>
+            </svg>
+          </div>
+          <div class="pipeline-label">Game Engine</div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:center;gap:150px;margin-top:16px;flex:1;height:300px;">
+        <div class="media-placeholder">
+          <video src="resources/CamPath blender.mp4" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></video>
+        </div>
+        <div class="media-placeholder">
+          <video src="resources/blender_3dgs_timelapse.mp4" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></video>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 3 — Value                             -->
+    <!-- ════════════════════════════════════════════ -->
+    <section data-background-color="#0a0a0f" data-transition="zoom">
+      <div class="tag">Data, tech, future</div>
+      <h2>Value</h2>
+      <div class="accent-line"></div>
+      <div class="detail-grid">
+        <div class="detail-content">
+          <ul>
+            <li>Capture data is reusable as technology evolves</li>
+            <li>Technology is under rapid development, new possibilities emerge everyday</li>
+            <li>Flexible pipeline suitable for a wide variety of use cases</li>
+            <li>Significant progress with no funding</li>
+            <li>EU sovereignty, local first</li>
+          </ul>
+        </div>
+        <div class="media-placeholder">
+          <video src="resources/gameenginevideo.mp4" autoplay loop muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:12px;"></video>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ -->
+    <!-- SLIDE 10 — CLOSING                          -->
+    <!-- ════════════════════════════════════════════ -->
+    <section class="title-slide" data-background-color="#0a0a0f" data-transition="zoom">
+      <div class="event-badge">Thank You</div>
+      <h1>
+        Questions<span class="highlight">?</span>
+      </h1>
+      <div class="accent-line"></div>
+      <div style="display:flex;align-items:center;gap:24px;margin-top:12px;">
+        <p class="subtitle" style="margin:0;">
+        We gladly welcome any feedback, and are enthousiastic to discuss these topics with you.
+        </p>
+        <img src="resources/qr-code.png" style="flex-shrink:0;width:150px;height:150px;border-radius:8px;border:1px solid rgba(0,229,160,0.2);">
+      </div>
+      <p class="team">
+        <span>Ørjan Stueland · Robin Finsådal · Noah Øfsti · Benjamin Papp</span>
+      </p>
+    </section>
+
+  </div><!-- /slides -->
+
+  <div class="slide-footer">GeoAI 2026 — Farmchart</div>
+  <button class="fullscreen-btn" id="fullscreenBtn">⛶ Fullscreen</button>
+  <button class="autoplay-btn" id="autoplayBtn">⏵ Auto</button>
+</div>
+
+<!-- Reveal.js core -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.js"></script>
+
+<!-- Zoom plugin for the pipeline zoom effect -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/zoom/zoom.min.js"></script>
+
+<script>
+  Reveal.initialize({
+    hash: true,
+    history: true,
+    width: 1280,
+    height: 720,
+
+    // Transition settings — 'zoom' gives the pipeline dive-in feel
+    transition: 'zoom',
+    transitionSpeed: 'slow',
+    backgroundTransition: 'zoom',
+
+    // Overview mode (press O) shows the full pipeline map
+    overview: true,
+
+    // Navigation
+    loop: true,
+    controls: true,
+    controlsLayout: 'bottom-right',
+    progress: true,
+    center: false,
+
+    // Plugins
+    plugins: [RevealZoom],
+
+    // Presentation view
+    slideNumber: 'c/t',
+  });
+
+  Reveal.on('slidechanged', event => {
+    document.querySelectorAll('.slides video').forEach(v => { v.pause(); v.currentTime = 0; });
+    event.currentSlide.querySelectorAll('video').forEach(v => v.play());
+  });
+
+  // ── AUTOPLAY ──
+  let autoplayTimer = null;
+  const btn = document.getElementById('autoplayBtn');
+
+  function hasPendingFragments() {
+    const slide = Reveal.getCurrentSlide();
+    return slide ? slide.querySelectorAll('.fragment:not(.visible)').length > 0 : false;
+  }
+
+  function scheduleNext() {
+    const delay = hasPendingFragments() ? 5000 : 10000;
+    autoplayTimer = setTimeout(() => {
+      if (hasPendingFragments()) {
+        Reveal.nextFragment();
+      } else if (Reveal.isLastSlide()) {
+        Reveal.slide(0);
+      } else {
+        Reveal.next();
+      }
+      scheduleNext();
+    }, delay);
+  }
+
+  function startAutoplay() {
+    scheduleNext();
+    btn.textContent = '⏸ Auto';
+    btn.classList.add('active');
+  }
+
+  function stopAutoplay() {
+    clearTimeout(autoplayTimer);
+    autoplayTimer = null;
+    btn.textContent = '⏵ Auto';
+    btn.classList.remove('active');
+  }
+
+  btn.addEventListener('click', () => {
+    autoplayTimer ? stopAutoplay() : startAutoplay();
+  });
+
+  // ── FULLSCREEN ──
+  const fsBtn = document.getElementById('fullscreenBtn');
+
+  function updateFsBtn() {
+    fsBtn.textContent = document.fullscreenElement ? '✕ Exit Full' : '⛶ Fullscreen';
+  }
+
+  fsBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  });
+
+  document.addEventListener('fullscreenchange', updateFsBtn);
+</script>
+
+</body>
+</html>
